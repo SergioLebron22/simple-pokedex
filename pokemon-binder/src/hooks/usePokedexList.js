@@ -6,6 +6,7 @@ const SLOT_LIMIT = 1280;
 // Patterns that indicate a form variant we want to exclude
 const EXCLUDE_PATTERNS = [
   /-totem$/,
+  /-totem-alola$/,
 //   /-gmax$/,          // keep or remove gigantamax — remove if unwanted
 //   /-mega$/,
 //   /-mega-[xy]$/,
@@ -54,7 +55,7 @@ const EXCLUDE_PATTERNS = [
   // Genesect forms
   /^genesect-/,
   // Greninja forms
-  /^greninja-/,
+  /^greninja-battle-bond/,
   // Scatterbug/Spewpa patterns
   /^scatterbug-/,
   /^spewpa-/,
@@ -72,6 +73,7 @@ const EXCLUDE_PATTERNS = [
   /^xerneas-/,
   // Zygarde forms
   /^zygarde-/,
+  /^rockruff-own-tempo/,
   // Hoopa forms
   // /^hoopa-/,
   // Oricorio forms
@@ -163,10 +165,20 @@ async function fetchAllPokemon() {
     }))
     .filter(p => !shouldExclude(p.name));
 
-  // Build lookup of base Pokémon only (national dex IDs ≤ 10000)
+  // Build lookup of base Pokémon (national dex IDs ≤ 10000).
+  // Also register bare prefixes for entries whose "default form" name has a suffix
+  // (e.g. 'giratina-altered' id=487 → also registers 'giratina' → 487).
+  // This lets getBaseName find the anchor when PokeAPI uses a hyphenated default name.
   const nameToBaseId = {};
   for (const p of entries) {
-    if (p.id <= 10000) nameToBaseId[p.name] = p.id;
+    if (p.id <= 10000) {
+      nameToBaseId[p.name] = p.id;
+      const lastHyphen = p.name.lastIndexOf('-');
+      if (lastHyphen > 0) {
+        const prefix = p.name.slice(0, lastHyphen);
+        if (nameToBaseId[prefix] === undefined) nameToBaseId[prefix] = p.id;
+      }
+    }
   }
 
   // Group forms right after their base: sort by (baseId, isBase, ownId)
