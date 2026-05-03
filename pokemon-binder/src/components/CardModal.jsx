@@ -116,7 +116,8 @@ function CardInfoPanel({ card }) {
 
 function toSearchQuery(name) {
   if (!name) return '';
-  return name.charAt(0).toUpperCase() + name.slice(1);
+  const base = name.split('-')[0];
+  return base.charAt(0).toUpperCase() + base.slice(1);
 }
 
 export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClose }) {

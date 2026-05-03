@@ -63,7 +63,7 @@ export default function CardSlot({ pokemon, card, slotNumber, onClick }) {
           {/* Name label */}
           <div className="absolute bottom-0 left-0 right-0 text-center
                           card-name-overlay px-0.5 pb-1 pt-3">
-            <span className="text-[7px] font-extrabold text-white drop-shadow-md truncate block px-1 capitalize">
+            <span className="text-[12px] font-extrabold text-white drop-shadow-md truncate block px-1 capitalize">
               {card?.name || pokemon?.name?.replace(/-/g, ' ')}
             </span>
           </div>
