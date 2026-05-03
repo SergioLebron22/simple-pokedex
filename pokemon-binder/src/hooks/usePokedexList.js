@@ -1,140 +1,50 @@
 import { useState, useEffect } from 'react';
 
 const CARDS_PER_PAGE = 20;
-const SLOT_LIMIT = 1280;
+const SLOT_LIMIT = 1600;
 
-// Patterns that indicate a form variant we want to exclude
 const EXCLUDE_PATTERNS = [
   /-totem$/,
   /-totem-alola$/,
-//   /-gmax$/,          // keep or remove gigantamax — remove if unwanted
-//   /-mega$/,
-//   /-mega-[xy]$/,
-//   /-alola$/,         // keep or remove regionals — remove if unwanted
-//   /-galar$/,
-//   /-hisui$/,
-//   /-paldea$/,
-  // Minior colors and similar multi-color forms
   /-core-[a-z]+$/,
   /-[a-z]+-stripe$/,
-  // Vivillon, Florges, Furfrou patterns
   /-[a-z]+-pattern$/,
   /-[a-z]+-trim$/,
-  // Unown letters
   /^unown-[a-z]+$/,
   /^unown-exclamation$/,
   /^unown-question$/,
-  // Pikachu costume/hat/gmax variants
   /^pikachu-/,
-  // Spinda
   /^spinda-/,
-  // Castform forms
-//   /^castform-/,
-  // Deoxys forms
-//   /^deoxys-/,
-  // Wormadam forms
-//   /^wormadam-/,
-  // Rotom forms
-//   /^rotom-/,
-  // Shaymin forms
-//   /^shaymin-/,
-  // Giratina forms
-//   /^giratina-/,
-  // Basculin forms
-  /^basculin-/,
-  // Darmanitan forms
-  /^darmanitan-/,
-  // Tornadus/Thundurus/Landorus forms
-//   /-(incarnate|therian)$/,
-  // Kyurem forms
-//   /^kyurem-/,
-  // Keldeo forms
-//   /^keldeo-/,
-  // Meloetta forms
-//   /^meloetta-/,
-  // Genesect forms
+  /^basculin-(?!red)/,
+  /-zen$/,
   /^genesect-/,
-  // Greninja forms
   /^greninja-battle-bond/,
-  // Scatterbug/Spewpa patterns
   /^scatterbug-/,
   /^spewpa-/,
-  // Flabébé colors
   /^flabebe-/,
-  // Furfrou trims
   /^furfrou-/,
-  // Meowstic forms
-  /^meowstic-/,
-  // Aegislash forms
-  /^aegislash-/,
-  // Pumpkaboo/Gourgeist sizes
+  /-blade/,
   /-(small|large|super)$/,
-  // Xerneas forms
   /^xerneas-/,
-  // Zygarde forms
-  /^zygarde-/,
   /^rockruff-own-tempo/,
-  // Hoopa forms
-  // /^hoopa-/,
-  // Oricorio forms
-  // /^oricorio-/,
-  // Lycanroc forms
-//   /^lycanroc-/,
-  // Wishiwashi forms
-  /^wishiwashi-/,
-  // Minior forms (core colors)
-  /^minior-/,
-  // Mimikyu forms
-  /^mimikyu-/,
-  // Necrozma forms
-//   /^necrozma-/,
-  // Magearna forms
+  /^minior-(?!red)/,
+  /^mimikyu-(busted|totem-disguised|totem-busted)/,
   /^magearna-/,
-  // Cramorant forms
   /^cramorant-/,
-  // Toxtricity forms
-  /^toxtricity-/,
-  // Sinistea/Polteageist forms
+  /low-key-gmax/,
+  /appletun-gmax/,
   /-(phony|antique)$/,
-  // Indeedee forms
-  /^indeedee-/,
-  // Morpeko forms
-  /^morpeko-/,
-  // Zacian/Zamazenta forms
   /-(hero|crowned)$/,
-  // Eternatus forms
-//   /^eternatus-/,
-  // Urshifu forms
-  /^urshifu-/,
-  // Zarude forms
   /^zarude-/,
-  // Calyrex forms
-  /^calyrex-/,
-  // Enamorus forms
-  /^enamorus-/,
-  // Palafin forms
-//   /^palafin-/,
-  // Tatsugiri forms
-  /^tatsugiri-/,
-  // Dudunsparce forms
-//   /^dudunsparce-/,
-  // Maushold forms
-  /^maushold-/,
-  // Squawkabilly colors
-  /^squawkabilly-/,
-  // Oinkologne forms
-//   /^oinkologne-/,
-  // Iron/Paradox alternate forms
-  // Gimmighoul forms
   /^gimmighoul-/,
-  // Koraidon/Miraidon forms
   /^koraidon-/,
   /^miraidon-/,
-  // Poltchageist forms
   /-(counterfeit|artisan)$/,
-  // Bloodmoon Ursaluna (keep base)
-  // /^ursaluna-/,
-  // Walking Wake, Iron Leaves etc are separate Pokemon — keep those
+  /-starter/,
+  /-female/,
+  /-three/,
+  /^tatsugiri-(droopy|stretchy)/,
+  /^squawkabilly-(?!green)/,
 ];
 
 function shouldExclude(name) {
@@ -145,6 +55,9 @@ function shouldExclude(name) {
 // Uses only entries with id ≤ 10000 as valid base targets to avoid false positives
 // (e.g. charizard-mega resolving to charizard-mega instead of charizard).
 function getBaseName(name, nameToBaseId) {
+  // If the name itself is a national-dex Pokémon (id ≤ 10000), it is not a
+  // form of anything else — return it as-is so it sorts at its own dex position.
+  if (nameToBaseId[name] !== undefined) return name;
   const parts = name.split('-');
   for (let i = parts.length - 1; i >= 1; i--) {
     const candidate = parts.slice(0, i).join('-');
@@ -173,9 +86,9 @@ async function fetchAllPokemon() {
   for (const p of entries) {
     if (p.id <= 10000) {
       nameToBaseId[p.name] = p.id;
-      const lastHyphen = p.name.lastIndexOf('-');
-      if (lastHyphen > 0) {
-        const prefix = p.name.slice(0, lastHyphen);
+      const nameParts = p.name.split('-');
+      for (let k = 1; k < nameParts.length; k++) {
+        const prefix = nameParts.slice(0, k).join('-');
         if (nameToBaseId[prefix] === undefined) nameToBaseId[prefix] = p.id;
       }
     }
