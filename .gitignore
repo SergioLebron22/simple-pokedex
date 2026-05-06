@@ -1,1 +1,21 @@
-\node_modules
+# ── Node ──────────────────────────────────────────────────────────────────────
+node_modules/
+pokemon-binder/build/
+
+# ── Python ────────────────────────────────────────────────────────────────────
+backend/venv/
+backend/db.sqlite3
+backend/staticfiles/
+__pycache__/
+*.pyc
+*.pyo
+
+# ── Environment / secrets ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.production
+.env.production.local
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

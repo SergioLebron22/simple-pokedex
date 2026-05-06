@@ -11,10 +11,10 @@ export default function Header({ totalCards, totalPages, totalSlots }) {
   ];
 
   return (
-    <header className="flex items-center justify-between mb-7 flex-wrap gap-3">
+    <header className="flex items-center justify-between mb-5 sm:mb-7 flex-wrap gap-3">
       {/* Title */}
-      <div className="flex items-center gap-4">
-        <Pokeball size={48} />
+      <div className="flex items-center gap-3 sm:gap-4">
+        <Pokeball size={40} />
         <div>
           <h1
             className="font-pixel text-white leading-relaxed"
