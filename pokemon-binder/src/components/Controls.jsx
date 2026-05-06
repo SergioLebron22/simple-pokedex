@@ -50,13 +50,13 @@ function PokemonSearch({ allPokemon, onNavigate }) {
         onKeyDown={handleKeyDown}
         placeholder="🔍 Find Pokémon…"
         className="bg-white/[0.07] border border-white/[0.13] text-white placeholder-gray-400
-                   px-3.5 py-2 rounded-xl text-sm outline-none min-w-[180px]
+                   px-3.5 py-2 rounded-xl text-sm outline-none w-full sm:min-w-[180px]
                    focus:border-pokeRed-light transition-colors"
       />
 
       {open && (
         <div
-          className="absolute top-full left-0 mt-1 w-64 rounded-xl border border-[#333355]
+          className="absolute top-full left-0 mt-1 w-full sm:w-64 rounded-xl border border-[#333355]
                      bg-[#1e1e2e] shadow-[0_8px_32px_rgba(0,0,0,0.7)] z-50
                      overflow-hidden divide-y divide-white/5"
         >
@@ -147,7 +147,9 @@ export default function Controls({
       ))}
 
       {/* Pokemon search → navigate */}
-      <PokemonSearch allPokemon={allPokemon} onNavigate={onNavigate} />
+      <div className="flex-1 min-w-0 sm:flex-none">
+        <PokemonSearch allPokemon={allPokemon} onNavigate={onNavigate} />
+      </div>
     </div>
   );
 }

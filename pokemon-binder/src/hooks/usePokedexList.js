@@ -29,7 +29,7 @@ const EXCLUDE_PATTERNS = [
   /^rockruff-own-tempo/,
   /^minior-(?!red)/,
   /^mimikyu-(busted|totem-disguised|totem-busted)/,
-  /^magearna-/,
+  /^magearna-(?!original)/,
   /^cramorant-/,
   /low-key-gmax/,
   /appletun-gmax/,
@@ -45,6 +45,7 @@ const EXCLUDE_PATTERNS = [
   /-three/,
   /^tatsugiri-(droopy|stretchy)/,
   /^squawkabilly-(?!green)/,
+  /-power-construct/,
 ];
 
 function shouldExclude(name) {

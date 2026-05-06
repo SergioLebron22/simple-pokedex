@@ -16,7 +16,7 @@ export default function CardSlot({ pokemon, card, slotNumber, onClick }) {
   const displayImage = card?.tcgImage || (!imgError ? spriteUrl : fallbackUrl);
 
   const isTCG     = !!card?.tcgImage;
-  const hasAnything = !!pokemon;
+  const hasAnything = !!pokemon || !!card;
 
   return (
     <div

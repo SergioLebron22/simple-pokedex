@@ -178,14 +178,14 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-5
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5
                  bg-black/80 backdrop-blur-[5px] animate-fadeIn"
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <div
-        className={`w-full rounded-2xl border border-[#555577] p-6
+        className={`w-full rounded-2xl border border-[#555577] p-4 sm:p-6
                    shadow-[0_30px_80px_rgba(0,0,0,0.85)] animate-slideUp
-                   overflow-y-auto max-h-[90vh]
+                   overflow-y-auto max-h-[95vh] sm:max-h-[90vh]
                    ${view === 'info' ? 'max-w-5xl' : 'max-w-4xl'}`}
         style={{ background: 'linear-gradient(135deg, #1e1e2e, #2d2d3d)' }}
       >
@@ -223,7 +223,7 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
         {view === 'edit' ? (
           <div className="space-y-4">
             {/* Search inputs */}
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1">
                 <label className="block text-[11px] font-extrabold text-pokeGray-light mb-1">
                   Search by Name
@@ -238,7 +238,7 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
                              outline-none transition-colors"
                 />
               </div>
-              <div className="w-36">
+              <div className="w-full sm:w-36">
                 <label className="block text-[11px] font-extrabold text-pokeGray-light mb-1">
                   Filter by Local ID
                 </label>
@@ -259,7 +259,7 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
 
             {/* Card grid */}
             {filteredResults.length > 0 && (
-              <div className="grid grid-cols-5 gap-3 max-h-96 overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 max-h-80 sm:max-h-96 overflow-y-auto pr-1">
                 {filteredResults.map(c => (
                   <button
                     key={c.id}
@@ -293,7 +293,7 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
 
             {/* Name, notes, actions */}
             <div className="border-t border-white/10 pt-4 space-y-3">
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1">
                   <label className="block text-[11px] font-extrabold text-pokeGray-light mb-1">
                     Name
@@ -345,27 +345,31 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
             </div>
           </div>
         ) : (
-          /* Info view: 3-column layout */
-          <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-start">
-            {/* Left: card info + price */}
-            <CardInfoPanel card={card} />
-
-            {/* Center: card image */}
-            <div className="flex flex-col items-center">
+          /* Info view: stacks on mobile, 3-column on md+ */
+          <div className="flex flex-col md:grid md:grid-cols-[1fr_auto_1fr] gap-5 md:gap-8 items-start">
+            {/* Card image — first on mobile (order-1), center column on desktop (md:order-2) */}
+            <div className="flex flex-col items-center order-1 md:order-2">
               {card?.tcgImage ? (
                 <img
                   src={card.tcgImage}
                   alt={card.name}
-                  className="h-80 w-auto rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] object-contain"
+                  className="h-60 sm:h-80 w-auto rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] object-contain"
                 />
               ) : (
-                <div className="h-80 w-56 bg-pokeDark-card border border-white/10 rounded-xl
+                <div className="h-60 sm:h-80 w-44 sm:w-56 bg-pokeDark-card border border-white/10 rounded-xl
                                 flex items-center justify-center text-6xl opacity-25">🎴</div>
               )}
             </div>
 
-            {/* Right: Pokédex panel */}
-            <PokedexPanel pokemonName={pokemon?.name} />
+            {/* Card info + price — second on mobile, left column on desktop (md:order-1) */}
+            <div className="order-2 md:order-1 min-w-0">
+              <CardInfoPanel card={card} />
+            </div>
+
+            {/* Pokédex panel — third on mobile and desktop */}
+            <div className="order-3 min-w-0">
+              <PokedexPanel pokemonName={pokemon?.name} />
+            </div>
           </div>
         )}
       </div>
