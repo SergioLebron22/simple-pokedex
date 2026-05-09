@@ -23,7 +23,7 @@ export default function NavBar() {
           className="font-pixel text-white group-hover:text-pokeGold transition-colors"
           style={{ fontSize: '8px' }}
         >
-          PokéBinder
+          DexBindr
         </span>
       </Link>
 

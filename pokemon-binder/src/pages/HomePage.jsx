@@ -48,7 +48,7 @@ export default function HomePage() {
                 lineHeight: 1.8,
               }}
             >
-              PokéBinder
+              DexBindr
             </h1>
             <p className="text-pokeGray-light text-sm font-nunito font-semibold max-w-md">
               Your digital home for tracking Pokémon TCG card collections.
@@ -129,7 +129,7 @@ export default function HomePage() {
 
         <footer className="text-center pb-8">
           <p className="text-pokeGray-mid text-[11px] font-nunito">
-            PokéBinder — not affiliated with Nintendo or The Pokémon Company
+            DexBindr — not affiliated with Nintendo or The Pokémon Company
           </p>
         </footer>
       </div>
