@@ -120,7 +120,7 @@ function toSearchQuery(name) {
   return base.charAt(0).toUpperCase() + base.slice(1);
 }
 
-export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClose }) {
+export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClose, onToggleOwned }) {
   const defaultQuery = toSearchQuery(card?.name || pokemon?.name || '');
 
   const [nameOverride, setNameOverride] = useState(card?.name || '');
@@ -173,6 +173,7 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
       tcgCardId:  selected?.tcgCardId  ?? card?.tcgCardId  ?? '',
       tcgLocalId: selected?.tcgLocalId ?? card?.tcgLocalId ?? '',
       notes:      notes.trim(),
+      owned:      card?.owned          ?? true,
     });
   };
 
@@ -195,6 +196,18 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
             Slot #{slot}
           </h2>
           <div className="flex gap-2 items-center">
+            {card && onToggleOwned && (
+              <button
+                onClick={onToggleOwned}
+                className={`text-xs font-bold px-2 py-1 rounded-lg border transition-colors
+                  ${card.owned === false
+                    ? 'bg-red-800 border-red-600 text-red-100 hover:bg-red-700'
+                    : 'bg-green-800 border-green-600 text-green-200 hover:bg-green-700'
+                  }`}
+              >
+                {card.owned === false ? '? Missing' : '✓ Owned'}
+              </button>
+            )}
             {card && (
               <>
                 <button

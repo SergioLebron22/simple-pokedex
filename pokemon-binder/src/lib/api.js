@@ -9,6 +9,7 @@ export function toApiCard(card) {
     tcg_card_id:  card.tcgCardId    ?? '',
     tcg_local_id: card.tcgLocalId   ?? '',
     notes:        card.notes        ?? '',
+    owned:        card.owned        ?? true,
   };
 }
 
@@ -20,5 +21,6 @@ export function fromApiCard(data) {
     tcgCardId:  data.tcg_card_id  ?? '',
     tcgLocalId: data.tcg_local_id ?? '',
     notes:      data.notes        ?? '',
+    owned:      data.owned        ?? true,
   };
 }
