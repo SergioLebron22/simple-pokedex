@@ -12,6 +12,7 @@ export default function Binder({
   spineLabel        = 'NATIONAL POKÉDEX BINDER',
   binderBgColor     = null,
   binderBorderColor = '#4a4a5a',
+  onToggleOwned,
 }) {
   const slots = pageEntries.map((pokemon, localIndex) => {
     const globalIndex = pageIndex * CARDS_PER_PAGE + localIndex;
@@ -64,6 +65,7 @@ export default function Binder({
                 card={card}
                 slotNumber={globalIndex + 1}
                 onClick={() => onSlotClick(globalIndex, pokemon)}
+                onToggleOwned={() => onToggleOwned(globalIndex)}
               />
             ))}
           </div>

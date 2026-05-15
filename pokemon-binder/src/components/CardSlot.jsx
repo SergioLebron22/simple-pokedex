@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function CardSlot({ pokemon, card, slotNumber, onClick }) {
+export default function CardSlot({ pokemon, card, slotNumber, onClick, onToggleOwned }) {
   const [imgError, setImgError] = useState(false);
 
   // Official artwork URL — works for base + most forms
@@ -54,10 +54,30 @@ export default function CardSlot({ pokemon, card, slotNumber, onClick }) {
               alt={card?.name || pokemon?.name}
               onError={() => setImgError(true)}
               className={`object-contain ${isTCG ? 'w-full h-full rounded-lg' : 'w-[80%] h-[80%]'}`}
-              style={{ imageRendering: isTCG ? 'auto' : 'pixelated' }}
+              style={{
+                imageRendering: isTCG ? 'auto' : 'pixelated',
+                filter: card?.owned === false ? 'grayscale(100%)' : 'none',
+              }}
             />
           ) : (
             <span className="text-2xl opacity-30">❓</span>
+          )}
+
+          {/* Owned / missing toggle button */}
+          {card && onToggleOwned && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleOwned(); }}
+              title={card.owned === false ? 'Mark as owned' : 'Mark as missing'}
+              className={`absolute bottom-[22px] right-[4px] w-5 h-5 rounded-full z-20
+                          flex items-center justify-center text-[9px] font-black
+                          border shadow transition-colors
+                          ${card.owned === false
+                            ? 'bg-red-700 border-red-500 text-white hover:bg-red-600'
+                            : 'bg-green-700 border-green-500 text-white hover:bg-green-600'
+                          }`}
+            >
+              {card.owned === false ? '?' : '✓'}
+            </button>
           )}
 
           {/* Name label */}

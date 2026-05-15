@@ -88,6 +88,12 @@ export default function CustomBinderPage() {
     closeModal();
   };
 
+  const handleToggleOwned = (globalIndex) => {
+    const currentCard = cardOverrides[globalIndex];
+    if (!currentCard) return;
+    setCard(globalIndex, { ...currentCard, owned: !(currentCard.owned ?? true) });
+  };
+
   const handleEditSave = async (formData) => {
     const res = await authFetch(apiUrl(`/api/binders/${id}/`), {
       method: 'PATCH',
@@ -221,6 +227,7 @@ export default function CustomBinderPage() {
                   spineLabel={binder.name.toUpperCase()}
                   binderBgColor={binder.bg_color}
                   binderBorderColor={binder.binder_color}
+                  onToggleOwned={handleToggleOwned}
                 />
               </div>
             );
@@ -242,6 +249,7 @@ export default function CustomBinderPage() {
           onSave={handleSave}
           onRemove={handleRemove}
           onClose={closeModal}
+          onToggleOwned={() => handleToggleOwned(modal.globalIndex)}
         />
       )}
 
