@@ -87,7 +87,7 @@ function MovesTab({ moves }) {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 max-h-56 overflow-y-auto pr-1">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
         {display.map(m => (
           <div key={m.name}
                className="bg-pokeDark-card rounded-lg px-2.5 py-1.5 border border-white/5
@@ -138,7 +138,7 @@ function HabitatsTab({ speciesData, encounters }) {
       )}
 
       {versions.length > 0 ? (
-        <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+        <div className="space-y-2">
           {versions.map(ver => (
             <div key={ver} className="bg-pokeDark-card rounded-xl p-2.5 border border-white/5">
               <p className="text-pokeGold text-[12px] font-bold capitalize mb-1.5">

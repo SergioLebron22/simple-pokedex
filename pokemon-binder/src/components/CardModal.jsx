@@ -196,7 +196,6 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
       <div
         className={`w-full rounded-2xl border border-[#555577] p-4 sm:p-6
                    shadow-[0_30px_80px_rgba(0,0,0,0.85)] animate-slideUp
-                   overflow-y-auto max-h-[90vh]
                    ${view === 'info' ? 'max-w-5xl' : 'max-w-4xl'}`}
         style={{ background: 'linear-gradient(135deg, #1e1e2e, #2d2d3d)' }}
         onClick={e => e.stopPropagation()}
@@ -372,7 +371,7 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
           /* Info view: stacks on mobile, 3-column on md+ */
           <div className="flex flex-col md:grid md:grid-cols-[1fr_auto_1fr] gap-5 md:gap-8 items-start">
             {/* Card image — first on mobile (order-1), center column on desktop (md:order-2) */}
-            <div className="flex flex-col items-center order-1 md:order-2">
+            <div className="flex flex-col items-center w-full order-1 md:order-2">
               {card?.tcgImage ? (
                 <img
                   src={card.tcgImage}
