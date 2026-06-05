@@ -3,6 +3,7 @@ import { useTCGSearch } from '../hooks/useTCGSearch';
 import PokedexPanel from './PokedexPanel';
 import EvolutionPanel from './EvolutionPanel';
 import PokemonInfoTabs from './PokemonInfoTabs';
+import CardLightbox from './CardLightbox';
 
 function derivePokemonName(cardName) {
   if (!cardName) return '';
@@ -127,7 +128,7 @@ function toSearchQuery(name) {
   return base.charAt(0).toUpperCase() + base.slice(1);
 }
 
-export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClose, onToggleOwned }) {
+export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClose, onToggleOwned, showPokedexInfo = false }) {
   const defaultQuery = toSearchQuery(card?.name || pokemon?.name || '');
 
   const [nameOverride, setNameOverride] = useState(card?.name || '');
@@ -136,6 +137,7 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
   const [view, setView]                 = useState(card ? 'info' : 'edit');
   const [nameQuery, setNameQuery]       = useState(defaultQuery);
   const [idFilter, setIdFilter]         = useState('');
+  const [lightbox, setLightbox]         = useState(false);
 
   const { results, loading, error, search, clearResults } = useTCGSearch();
 
@@ -373,11 +375,22 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
             {/* Card image — first on mobile (order-1), center column on desktop (md:order-2) */}
             <div className="flex flex-col items-center w-full order-1 md:order-2">
               {card?.tcgImage ? (
-                <img
-                  src={card.tcgImage}
-                  alt={card.name}
-                  className="h-60 sm:h-80 w-auto rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] object-contain"
-                />
+                <div className="relative">
+                  <img
+                    src={card.tcgImage}
+                    alt={card.name}
+                    className="h-60 sm:h-80 w-auto rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] object-contain"
+                  />
+                  <button
+                    onClick={() => setLightbox(true)}
+                    className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-black/60 border border-white/20
+                               flex items-center justify-center text-white hover:bg-black/80
+                               opacity-50 hover:opacity-100 transition-opacity"
+                    title="View card close-up"
+                  >
+                    🔍
+                  </button>
+                </div>
               ) : (
                 <div className="h-60 sm:h-80 w-44 sm:w-56 bg-pokeDark-card border border-white/10 rounded-xl
                                 flex items-center justify-center text-6xl opacity-25">🎴</div>
@@ -397,7 +410,11 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
         )}
       </div>
 
-      {view === 'info' && card && (
+      {lightbox && card?.tcgImage && (
+        <CardLightbox card={card} onClose={() => setLightbox(false)} />
+      )}
+
+      {view === 'info' && card && showPokedexInfo && (
         <div className="w-full max-w-5xl mx-auto space-y-4" onClick={e => e.stopPropagation()}>
           <EvolutionPanel pokemonName={pokemonName} />
           <PokemonInfoTabs pokemonName={pokemonName} />

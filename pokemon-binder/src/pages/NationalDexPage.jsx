@@ -130,6 +130,7 @@ export default function NationalDexPage() {
             onSave={handleSave}
             onRemove={handleRemove}
             onClose={closeModal}
+            showPokedexInfo
           />
         )}
       </div>
