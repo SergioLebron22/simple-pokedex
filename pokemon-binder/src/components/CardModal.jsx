@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useTCGSearch } from '../hooks/useTCGSearch';
 import PokedexPanel from './PokedexPanel';
+import EvolutionPanel from './EvolutionPanel';
+import PokemonInfoTabs from './PokemonInfoTabs';
+
+function derivePokemonName(cardName) {
+  if (!cardName) return '';
+  return cardName.split(' ')[0].toLowerCase();
+}
 
 const VARIANT_LABELS = {
   normal: 'Normal',
@@ -177,18 +184,22 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
     });
   };
 
+  const pokemonName = derivePokemonName(card?.name || pokemon?.name || '');
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5
-                 bg-black/80 backdrop-blur-[5px] animate-fadeIn"
-      onClick={e => e.target === e.currentTarget && onClose()}
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-[5px] animate-fadeIn"
+      onClick={onClose}
     >
+      <div className="flex flex-col items-center gap-4 py-6 px-3 sm:px-5">
+
       <div
         className={`w-full rounded-2xl border border-[#555577] p-4 sm:p-6
                    shadow-[0_30px_80px_rgba(0,0,0,0.85)] animate-slideUp
-                   overflow-y-auto max-h-[95vh] sm:max-h-[90vh]
+                   overflow-y-auto max-h-[90vh]
                    ${view === 'info' ? 'max-w-5xl' : 'max-w-4xl'}`}
         style={{ background: 'linear-gradient(135deg, #1e1e2e, #2d2d3d)' }}
+        onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-5">
@@ -385,6 +396,15 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
             </div>
           </div>
         )}
+      </div>
+
+      {view === 'info' && card && (
+        <div className="w-full max-w-5xl mx-auto space-y-4" onClick={e => e.stopPropagation()}>
+          <EvolutionPanel pokemonName={pokemonName} />
+          <PokemonInfoTabs pokemonName={pokemonName} />
+        </div>
+      )}
+
       </div>
     </div>
   );
