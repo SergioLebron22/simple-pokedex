@@ -37,14 +37,14 @@ export default function NationalDexPage() {
     goToPage(Math.floor(idx / (CARDS_PER_PAGE * 2)));
   };
 
-  const handleSave = (cardData) => { setCard(modal.globalIndex, cardData); closeModal(); };
-  const handleRemove = () => { removeCard(modal.globalIndex); closeModal(); };
+  const handleSave = (cardData) => { setCard(modal.pokemon.name, cardData); closeModal(); };
+  const handleRemove = () => { removeCard(modal.pokemon.name); closeModal(); };
 
   const fakeSpreadsForDots = Array.from({ length: totalSpreads }, (_, i) => {
     const lp = i * 2, rp = i * 2 + 1;
     return [
-      ...Array.from({ length: CARDS_PER_PAGE }, (_, j) => cardOverrides[lp * CARDS_PER_PAGE + j] || null),
-      ...Array.from({ length: CARDS_PER_PAGE }, (_, j) => cardOverrides[rp * CARDS_PER_PAGE + j] || null),
+      ...getPageEntries(lp).map(p => cardOverrides[p.name] || null),
+      ...getPageEntries(rp).map(p => cardOverrides[p.name] || null),
     ];
   });
 
@@ -125,7 +125,7 @@ export default function NationalDexPage() {
         {modal && (
           <CardModal
             slot={modal.globalIndex + 1}
-            card={cardOverrides[modal.globalIndex] || null}
+            card={cardOverrides[modal.pokemon.name] || null}
             pokemon={modal.pokemon}
             onSave={handleSave}
             onRemove={handleRemove}

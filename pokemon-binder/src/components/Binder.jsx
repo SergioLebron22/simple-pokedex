@@ -16,7 +16,7 @@ export default function Binder({
 }) {
   const slots = pageEntries.map((pokemon, localIndex) => {
     const globalIndex = pageIndex * CARDS_PER_PAGE + localIndex;
-    const card = cardOverrides[globalIndex] || null;
+    const card = cardOverrides[pokemon.name] || null;
     return { pokemon, card, localIndex, globalIndex };
   });
 

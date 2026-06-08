@@ -18,18 +18,18 @@ class NationalDexView(APIView):
     def get(self, request):
         binder = _get_or_create_binder(request.user)
         cards = NationalDexCardSerializer(binder.cards.all(), many=True).data
-        # Keyed by slot_index for O(1) frontend lookup
-        return Response({str(c['slot_index']): c for c in cards})
+        # Keyed by pokemon_name for O(1) frontend lookup
+        return Response({c['pokemon_name']: c for c in cards})
 
 
 class NationalDexSlotView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def put(self, request, slot_index):
+    def put(self, request, pokemon_name):
         binder = _get_or_create_binder(request.user)
         card, created = NationalDexCard.objects.get_or_create(
             binder=binder,
-            slot_index=slot_index,
+            pokemon_name=pokemon_name,
             defaults={'name': ''},
         )
         serializer = NationalDexCardSerializer(card, data=request.data, partial=True)
@@ -40,10 +40,10 @@ class NationalDexSlotView(APIView):
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
 
-    def delete(self, request, slot_index):
+    def delete(self, request, pokemon_name):
         binder = _get_or_create_binder(request.user)
         deleted, _ = NationalDexCard.objects.filter(
-            binder=binder, slot_index=slot_index
+            binder=binder, pokemon_name=pokemon_name
         ).delete()
         if not deleted:
             return Response(status=status.HTTP_404_NOT_FOUND)

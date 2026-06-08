@@ -13,7 +13,7 @@ const EXCLUDE_PATTERNS = [
   /^unown-[a-z]+$/,
   /^unown-exclamation$/,
   /^unown-question$/,
-  /^pikachu-/,
+  /^pikachu-(?!gmax)/,
   /^spinda-/,
   /^basculin-(?!red)/,
   /-zen$/,

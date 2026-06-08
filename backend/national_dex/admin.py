@@ -6,7 +6,7 @@ from .models import NationalDexBinder, NationalDexCard
 class NationalDexCardInline(admin.TabularInline):
     model = NationalDexCard
     extra = 0
-    readonly_fields = ('slot_index', 'updated_at')
+    readonly_fields = ('pokemon_name', 'updated_at')
 
 
 @admin.register(NationalDexBinder)

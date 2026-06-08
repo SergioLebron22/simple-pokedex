@@ -19,7 +19,8 @@ export function useNationalDexBinder() {
       .then(data => {
         if (cancelled) return;
         const overrides = {};
-        Object.entries(data).forEach(([k, v]) => { overrides[parseInt(k)] = fromApiCard(v); });
+        // Keys are now pokemon_name strings, not slot indices
+        Object.entries(data).forEach(([k, v]) => { overrides[k] = fromApiCard(v); });
         setCardOverrides(overrides);
       })
       .catch(() => { if (!cancelled) setError('Failed to load your binder.'); })
@@ -27,17 +28,17 @@ export function useNationalDexBinder() {
     return () => { cancelled = true; };
   }, []);
 
-  const setCard = useCallback((slotIndex, cardData) => {
-    setCardOverrides(prev => ({ ...prev, [slotIndex]: cardData }));
-    authFetchRef.current(apiUrl(`/api/national-dex/slots/${slotIndex}/`), {
+  const setCard = useCallback((pokemonName, cardData) => {
+    setCardOverrides(prev => ({ ...prev, [pokemonName]: cardData }));
+    authFetchRef.current(apiUrl(`/api/national-dex/pokemon/${encodeURIComponent(pokemonName)}/`), {
       method: 'PUT',
       body: JSON.stringify(toApiCard(cardData)),
     }).catch(console.error);
   }, []);
 
-  const removeCard = useCallback((slotIndex) => {
-    setCardOverrides(prev => { const n = { ...prev }; delete n[slotIndex]; return n; });
-    authFetchRef.current(apiUrl(`/api/national-dex/slots/${slotIndex}/`), {
+  const removeCard = useCallback((pokemonName) => {
+    setCardOverrides(prev => { const n = { ...prev }; delete n[pokemonName]; return n; });
+    authFetchRef.current(apiUrl(`/api/national-dex/pokemon/${encodeURIComponent(pokemonName)}/`), {
       method: 'DELETE',
     }).catch(console.error);
   }, []);
