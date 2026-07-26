@@ -71,7 +71,7 @@ class CustomBinderSlotView(APIView):
         if not binder:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        max_slots = binder.grid_rows * binder.grid_cols
+        max_slots = binder.grid_rows * binder.grid_cols * binder.page_count
         if not 0 <= slot_index < max_slots:
             return Response(
                 {'detail': f'slot_index must be 0–{max_slots - 1} for this binder.'},
