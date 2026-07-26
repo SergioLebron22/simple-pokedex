@@ -37,6 +37,7 @@ class CustomBinderSlot(models.Model):
     tcg_card_id  = models.CharField(max_length=50, blank=True)
     tcg_local_id = models.CharField(max_length=20, blank=True)
     notes        = models.TextField(blank=True)
+    owned        = models.BooleanField(default=True)
     updated_at   = models.DateTimeField(auto_now=True)
 
     class Meta:

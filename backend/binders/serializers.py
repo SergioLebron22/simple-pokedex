@@ -8,7 +8,7 @@ class CustomBinderSlotSerializer(serializers.ModelSerializer):
         model = CustomBinderSlot
         fields = (
             'slot_index', 'name', 'tcg_image', 'tcg_set',
-            'tcg_card_id', 'tcg_local_id', 'notes', 'updated_at',
+            'tcg_card_id', 'tcg_local_id', 'notes', 'owned', 'updated_at',
         )
         read_only_fields = ('slot_index', 'updated_at')
 
