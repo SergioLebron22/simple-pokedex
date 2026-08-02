@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 const NAV_LINKS = [
   { label: 'National Dex', to: '/national-dex', authRequired: true },
   { label: 'My Binders',   to: '/binders',      authRequired: true },
+  { label: 'Master Sets',  to: '/mastersets',   authRequired: true },
 ];
 
 export default function NavBar() {

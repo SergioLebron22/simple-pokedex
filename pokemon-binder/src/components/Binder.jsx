@@ -13,6 +13,7 @@ export default function Binder({
   binderBgColor     = null,
   binderBorderColor = '#4a4a5a',
   onToggleOwned,
+  progressMode      = 'filled',
 }) {
   const slots = pageEntries.map((pokemon, localIndex) => {
     const globalIndex = pageIndex * CARDS_PER_PAGE + localIndex;
@@ -21,12 +22,15 @@ export default function Binder({
   });
 
   const visibleSlots = slots.filter(({ pokemon, card }) => {
-    if (filterMode === 'filled' && !card) return false;
-    if (filterMode === 'empty'  &&  card) return false;
+    if (filterMode === 'filled'  && !card)        return false;
+    if (filterMode === 'empty'   &&  card)        return false;
+    if (filterMode === 'owned'   && !card?.owned) return false;
+    if (filterMode === 'missing' &&  card?.owned) return false;
     return true;
   });
 
   const filledCount = slots.filter(s => s.card).length;
+  const ownedCount  = slots.filter(s => s.card?.owned).length;
 
   return (
     <div className="flex flex-col items-center">
@@ -71,7 +75,7 @@ export default function Binder({
           </div>
 
           <ProgressBar
-            filled={filledCount}
+            filled={progressMode === 'owned' ? ownedCount : filledCount}
             total={CARDS_PER_PAGE}
             pageNumber={pageIndex + 1}
           />

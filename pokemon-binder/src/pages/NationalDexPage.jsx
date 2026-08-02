@@ -31,6 +31,17 @@ export default function NationalDexPage() {
   const openSlot   = (globalIndex, pokemon) => setModal({ globalIndex, pokemon });
   const closeModal = () => setModal(null);
 
+  const navigatePokemon = (delta) => {
+    setModal(prev => {
+      if (!prev) return prev;
+      const nextIndex = prev.globalIndex + delta;
+      if (nextIndex < 0 || nextIndex >= allPokemon.length) return prev;
+      const targetPage = Math.floor(nextIndex / (CARDS_PER_PAGE * 2));
+      if (targetPage !== currentPage) goToPage(targetPage);
+      return { globalIndex: nextIndex, pokemon: allPokemon[nextIndex] };
+    });
+  };
+
   const handleNavigateToPokemon = (pokemon) => {
     const idx = allPokemon.findIndex(p => p.id === pokemon.id);
     if (idx === -1) return;
@@ -130,6 +141,8 @@ export default function NationalDexPage() {
             onSave={handleSave}
             onRemove={handleRemove}
             onClose={closeModal}
+            onPrev={modal.globalIndex > 0 ? () => navigatePokemon(-1) : undefined}
+            onNext={modal.globalIndex < allPokemon.length - 1 ? () => navigatePokemon(1) : undefined}
             showPokedexInfo
           />
         )}

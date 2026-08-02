@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTCGSearch } from '../hooks/useTCGSearch';
 import PokedexPanel from './PokedexPanel';
 import EvolutionPanel from './EvolutionPanel';
@@ -49,7 +49,9 @@ function CardInfoPanel({ card }) {
     <div className="flex flex-col gap-3 min-w-0">
       <div className="space-y-1.5">
         <p className="text-white font-extrabold text-sm capitalize leading-tight">{card?.name}</p>
-        <p className="text-pokeGray-light text-[11px]">{cardMeta?.set || card?.tcgSet}</p>
+        <p className="text-pokeGray-light text-[11px]">
+          {cardMeta?.set || card?.tcgSet || card?.tcgCardId?.split('-').slice(0, -1).join('-')}
+        </p>
         {(cardMeta?.number || card?.tcgLocalId) && (
           <p className="text-pokeGray-light text-[11px]">#{cardMeta?.number || card?.tcgLocalId}</p>
         )}
@@ -128,25 +130,56 @@ function toSearchQuery(name) {
   return base.charAt(0).toUpperCase() + base.slice(1);
 }
 
-export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClose, onToggleOwned, showPokedexInfo = false }) {
+export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClose, onToggleOwned, onPrev, onNext, showPokedexInfo = false, editable = true }) {
   const defaultQuery = toSearchQuery(card?.name || pokemon?.name || '');
 
   const [nameOverride, setNameOverride] = useState(card?.name || '');
   const [selected, setSelected]         = useState(null);
   const [notes, setNotes]               = useState(card?.notes || '');
-  const [view, setView]                 = useState(card ? 'info' : 'edit');
+  const [view, setView]                 = useState(!editable ? 'info' : (card ? 'info' : 'edit'));
   const [nameQuery, setNameQuery]       = useState(defaultQuery);
   const [idFilter, setIdFilter]         = useState('');
   const [lightbox, setLightbox]         = useState(false);
+  const [slideDir, setSlideDir]         = useState(null);
 
   const { results, loading, error, search, clearResults } = useTCGSearch();
+
+  const touchStartRef = useRef(null);
+
+  const handlePrev = () => {
+    if (!onPrev) return;
+    setSlideDir('prev');
+    onPrev();
+  };
+
+  const handleNext = () => {
+    if (!onNext) return;
+    setSlideDir('next');
+    onNext();
+  };
+
+  const handleTouchStart = (e) => {
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  };
+
+  const handleTouchEnd = (e) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start) return;
+    const dx = e.changedTouches[0].clientX - start.x;
+    const dy = e.changedTouches[0].clientY - start.y;
+    const SWIPE_THRESHOLD = 60;
+    if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) < Math.abs(dy)) return;
+    if (dx < 0) handleNext();
+    else handlePrev();
+  };
 
   useEffect(() => {
     const q = toSearchQuery(card?.name || pokemon?.name || '');
     setNameOverride(card?.name || '');
     setSelected(null);
     setNotes(card?.notes || '');
-    setView(card ? 'info' : 'edit');
+    setView(!editable ? 'info' : (card ? 'info' : 'edit'));
     setNameQuery(q);
     setIdFilter('');
     clearResults();
@@ -165,7 +198,7 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
     setSelected({
       name:       tcgCard.name,
       tcgImage:   tcgCard.image ? `${tcgCard.image}/high.webp` : '',
-      tcgSet:     tcgCard.set?.name  || '',
+      tcgSet:     tcgCard.set?.name || tcgCard.set?.id || '',
       tcgCardId:  tcgCard.id         || '',
       tcgLocalId: tcgCard.localId    || '',
     });
@@ -193,6 +226,31 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
       className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-[5px] animate-fadeIn"
       onClick={onClose}
     >
+      {onPrev && (
+        <button
+          onClick={e => { e.stopPropagation(); handlePrev(); }}
+          aria-label="Previous card"
+          className="hidden sm:flex fixed left-3 md:left-6 top-1/2 -translate-y-1/2 z-[60]
+                     w-11 h-11 rounded-full bg-white/10 border border-white/20 text-white
+                     items-center justify-center text-2xl backdrop-blur-sm
+                     hover:bg-white/20 hover:scale-110 active:scale-95 transition-all duration-150"
+        >
+          ‹
+        </button>
+      )}
+      {onNext && (
+        <button
+          onClick={e => { e.stopPropagation(); handleNext(); }}
+          aria-label="Next card"
+          className="hidden sm:flex fixed right-3 md:right-6 top-1/2 -translate-y-1/2 z-[60]
+                     w-11 h-11 rounded-full bg-white/10 border border-white/20 text-white
+                     items-center justify-center text-2xl backdrop-blur-sm
+                     hover:bg-white/20 hover:scale-110 active:scale-95 transition-all duration-150"
+        >
+          ›
+        </button>
+      )}
+
       <div className="flex flex-col items-center gap-4 py-6 px-3 sm:px-5">
 
       <div
@@ -201,6 +259,8 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
                    ${view === 'info' ? 'max-w-5xl' : 'max-w-4xl'}`}
         style={{ background: 'linear-gradient(135deg, #1e1e2e, #2d2d3d)' }}
         onClick={e => e.stopPropagation()}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-5">
@@ -220,7 +280,7 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
                 {card.owned === false ? '? Missing' : '✓ Owned'}
               </button>
             )}
-            {card && (
+            {editable && card && (
               <>
                 <button
                   onClick={() => setView('info')}
@@ -371,7 +431,12 @@ export default function CardModal({ slot, card, pokemon, onSave, onRemove, onClo
           </div>
         ) : (
           /* Info view: stacks on mobile, 3-column on md+ */
-          <div className="flex flex-col md:grid md:grid-cols-[1fr_auto_1fr] gap-5 md:gap-8 items-start">
+          <div
+            key={`${slot}-${card?.tcgCardId || pokemon?.id || 'empty'}`}
+            className={`flex flex-col md:grid md:grid-cols-[1fr_auto_1fr] gap-5 md:gap-8 items-start
+              ${slideDir === 'next' ? 'animate-cardSlideFromRight' : ''}
+              ${slideDir === 'prev' ? 'animate-cardSlideFromLeft' : ''}`}
+          >
             {/* Card image — first on mobile (order-1), center column on desktop (md:order-2) */}
             <div className="flex flex-col items-center w-full order-1 md:order-2">
               {card?.tcgImage ? (

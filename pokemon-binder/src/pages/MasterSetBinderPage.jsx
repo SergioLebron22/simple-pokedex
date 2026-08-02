@@ -4,39 +4,35 @@ import NavBar from '../components/NavBar';
 import Binder from '../components/Binder';
 import PageDots from '../components/PageDots';
 import CardModal from '../components/CardModal';
-import EditBinderModal from '../components/EditBinderModal';
-import { useCustomBinder } from '../hooks/useCustomBinder';
-import { useAuth } from '../context/AuthContext';
-import { apiUrl } from '../lib/api';
+import { useMasterSetBinder } from '../hooks/useMasterSetBinder';
+
+const SLOTS_PER_PAGE = 12; // 4 cols x 3 rows
 
 const FILTER_OPTIONS = [
-  { id: 'all',    label: 'All'    },
-  { id: 'filled', label: 'Filled' },
-  { id: 'empty',  label: 'Empty'  },
+  { id: 'all',     label: 'All'     },
+  { id: 'owned',   label: 'Owned'   },
+  { id: 'missing', label: 'Missing' },
 ];
 
-export default function CustomBinderPage() {
-  const { id }      = useParams();
+export default function MasterSetBinderPage() {
+  const { setId }   = useParams();
   const navigate    = useNavigate();
-  const { authFetch } = useAuth();
 
   const {
-    binder,
+    setMeta,
     cardOverrides,
     currentPage,
-    totalCards,
-    setCard,
-    removeCard,
+    totalSlots,
+    ownedCount,
+    toggleOwned,
     goToPage,
-    updateBinderMeta,
     loading,
     error,
-  } = useCustomBinder(id);
+    saveError,
+  } = useMasterSetBinder(setId);
 
-  const [filterMode,  setFilterMode]  = useState('all');
-  const [modal,       setModal]       = useState(null); // { globalIndex }
-  const [editModal,   setEditModal]   = useState(false);
-  const [deleting,    setDeleting]    = useState(false);
+  const [filterMode, setFilterMode] = useState('all');
+  const [modal,      setModal]      = useState(null); // { globalIndex }
 
   if (loading) return (
     <>
@@ -47,24 +43,24 @@ export default function CustomBinderPage() {
     </>
   );
 
-  if (error || !binder) return (
+  if (error || !setMeta) return (
     <>
       <NavBar />
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-3rem)] gap-4">
-        <p className="text-red-400 text-sm">{error || 'Binder not found.'}</p>
-        <button onClick={() => navigate('/binders')}
+        <p className="text-red-400 text-sm">{error || 'Set not found.'}</p>
+        <button onClick={() => navigate('/mastersets')}
           className="text-xs text-pokeGray-light hover:text-white underline">
-          ← Back to My Binders
+          ← Back to Master Sets
         </button>
       </div>
     </>
   );
 
-  const SLOTS_PER_PAGE = binder.grid_rows * binder.grid_cols;
-  const totalSpreads   = Math.ceil(binder.page_count / 2);
-  const clampedPage    = Math.min(currentPage, totalSpreads - 1);
+  const pageCount    = Math.max(1, Math.ceil(totalSlots / SLOTS_PER_PAGE));
+  const totalSpreads = Math.max(1, Math.ceil(pageCount / 2));
+  const clampedPage  = Math.min(currentPage, totalSpreads - 1);
 
-  const getPageEntries = (pageIdx) => Array(SLOTS_PER_PAGE).fill(null);
+  const getPageEntries = () => Array(SLOTS_PER_PAGE).fill(null);
 
   const fakeSpreadsForDots = Array.from({ length: totalSpreads }, (_, i) => {
     const left  = i * 2;
@@ -75,7 +71,10 @@ export default function CustomBinderPage() {
     ];
   });
 
-  const openSlot   = (globalIndex) => setModal({ globalIndex });
+  const openSlot = (globalIndex) => {
+    if (globalIndex >= totalSlots) return;
+    setModal({ globalIndex });
+  };
   const closeModal = () => setModal(null);
 
   const navigateSlot = (delta) => {
@@ -89,44 +88,7 @@ export default function CustomBinderPage() {
     });
   };
 
-  const handleSave = (cardData) => {
-    setCard(modal.globalIndex, cardData);
-    closeModal();
-  };
-
-  const handleRemove = () => {
-    removeCard(modal.globalIndex);
-    closeModal();
-  };
-
-  const handleToggleOwned = (globalIndex) => {
-    const currentCard = cardOverrides[globalIndex];
-    if (!currentCard) return;
-    setCard(globalIndex, { ...currentCard, owned: !(currentCard.owned ?? true) });
-  };
-
-  const handleEditSave = async (formData) => {
-    const res = await authFetch(apiUrl(`/api/binders/${id}/`), {
-      method: 'PATCH',
-      body:   JSON.stringify(formData),
-    });
-    if (!res.ok) {
-      const d = await res.json();
-      throw new Error(Object.values(d)[0]?.[0] || 'Failed to save.');
-    }
-    const updated = await res.json();
-    updateBinderMeta(updated);
-    setEditModal(false);
-  };
-
-  const handleDelete = async () => {
-    if (!window.confirm(`Delete "${binder.name}"? All cards will be lost.`)) return;
-    setDeleting(true);
-    await authFetch(apiUrl(`/api/binders/${id}/`), { method: 'DELETE' });
-    navigate('/binders');
-  };
-
-  const totalSlots = SLOTS_PER_PAGE * binder.page_count;
+  const pct = totalSlots ? Math.round((ownedCount / totalSlots) * 100) : 0;
 
   return (
     <>
@@ -136,51 +98,41 @@ export default function CustomBinderPage() {
         {/* Header */}
         <header className="flex items-center justify-between mb-4 sm:mb-6 flex-wrap gap-3">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/binders')}
+            <button onClick={() => navigate('/mastersets')}
               className="text-pokeGray-light hover:text-white text-xs font-bold transition-colors">
-              ← Binders
+              ← Master Sets
             </button>
             <div
-              className="w-10 h-10 rounded-xl border-2 shrink-0"
-              style={{ background: binder.bg_color, borderColor: binder.binder_color }}
-            />
+              className="w-10 h-10 rounded-xl border-2 border-white/15 shrink-0 bg-white/95
+                         flex items-center justify-center overflow-hidden"
+            >
+              {setMeta.logo ? (
+                <img src={`${setMeta.logo}.png`} alt={setMeta.name} className="max-w-full max-h-full object-contain" />
+              ) : (
+                <span className="text-sm opacity-30">🎴</span>
+              )}
+            </div>
             <div>
               <h1 className="font-pixel text-white leading-relaxed" style={{ fontSize: '11px' }}>
-                {binder.name}
+                {setMeta.name}
               </h1>
               <p className="text-pokeGray-light text-xs mt-0.5">
-                {binder.grid_cols}×{binder.grid_rows} · {binder.page_count} pages
+                {totalSlots} cards
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             {[
-              { label: 'Cards',  value: totalCards },
-              { label: 'Slots',  value: totalSlots },
-              { label: 'Filled', value: `${totalSlots ? Math.round((totalCards / totalSlots) * 100) : 0}%` },
+              { label: 'Owned', value: ownedCount },
+              { label: 'Total', value: totalSlots },
+              { label: '%',     value: `${pct}%` },
             ].map(({ label, value }) => (
               <div key={label}
                 className="bg-white/10 border border-white/20 rounded-full px-3 py-1.5 text-xs font-bold">
                 {label}: <span className="text-pokeGold">{value}</span>
               </div>
             ))}
-            <button
-              onClick={() => setEditModal(true)}
-              className="bg-white/10 border border-white/15 hover:bg-white/20 text-white
-                         font-bold py-1.5 px-3 rounded-xl text-xs transition-colors"
-            >
-              Edit
-            </button>
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              className="bg-red-900/30 border border-red-700/40 hover:bg-red-800/50
-                         text-red-400 font-bold py-1.5 px-3 rounded-xl text-xs transition-colors
-                         disabled:opacity-50"
-            >
-              Delete
-            </button>
           </div>
         </header>
 
@@ -224,21 +176,20 @@ export default function CustomBinderPage() {
         {/* Two-page spread */}
         <div className="flex flex-col md:flex-row gap-4">
           {[clampedPage * 2, clampedPage * 2 + 1].map((pageIdx) => {
-            if (pageIdx >= binder.page_count) return null;
+            if (pageIdx >= pageCount) return null;
             return (
               <div key={pageIdx} className="flex-1 min-w-0">
                 <Binder
-                  pageEntries={getPageEntries(pageIdx)}
+                  pageEntries={getPageEntries()}
                   pageIndex={pageIdx}
                   cardOverrides={cardOverrides}
                   filterMode={filterMode}
+                  progressMode="owned"
                   onSlotClick={openSlot}
                   CARDS_PER_PAGE={SLOTS_PER_PAGE}
-                  gridCols={binder.grid_cols}
-                  spineLabel={binder.name.toUpperCase()}
-                  binderBgColor={binder.bg_color}
-                  binderBorderColor={binder.binder_color}
-                  onToggleOwned={handleToggleOwned}
+                  gridCols={4}
+                  spineLabel={setMeta.name.toUpperCase()}
+                  onToggleOwned={toggleOwned}
                 />
               </div>
             );
@@ -257,21 +208,20 @@ export default function CustomBinderPage() {
           slot={modal.globalIndex + 1}
           card={cardOverrides[modal.globalIndex] || null}
           pokemon={null}
-          onSave={handleSave}
-          onRemove={handleRemove}
           onClose={closeModal}
-          onToggleOwned={() => handleToggleOwned(modal.globalIndex)}
+          onToggleOwned={() => toggleOwned(modal.globalIndex)}
           onPrev={modal.globalIndex > 0 ? () => navigateSlot(-1) : undefined}
           onNext={modal.globalIndex < totalSlots - 1 ? () => navigateSlot(1) : undefined}
+          editable={false}
         />
       )}
 
-      {editModal && (
-        <EditBinderModal
-          binder={binder}
-          onSave={handleEditSave}
-          onClose={() => setEditModal(false)}
-        />
+      {saveError && (
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[70]
+                        bg-red-900/90 border border-red-700 text-red-100 text-xs font-bold
+                        px-4 py-2.5 rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.5)] backdrop-blur-sm">
+          {saveError}
+        </div>
       )}
     </>
   );

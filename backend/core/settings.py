@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'users',
     'national_dex',
     'binders',
+    'master_sets',
 ]
 
 MIDDLEWARE = [

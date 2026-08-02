@@ -37,11 +37,21 @@ module.exports = {
           '0%,100%': { boxShadow: '0 0 0 0 rgba(230,57,70,0.4)' },
           '50%':      { boxShadow: '0 0 0 6px rgba(230,57,70,0)' },
         },
+        cardSlideFromRight: {
+          from: { transform: 'translateX(40px)', opacity: 0 },
+          to:   { transform: 'translateX(0)',     opacity: 1 },
+        },
+        cardSlideFromLeft: {
+          from: { transform: 'translateX(-40px)', opacity: 0 },
+          to:   { transform: 'translateX(0)',      opacity: 1 },
+        },
       },
       animation: {
         fadeIn:  'fadeIn 0.2s ease',
         slideUp: 'slideUp 0.25s cubic-bezier(0.4,0,0.2,1)',
         pulse2:  'pulse2 2s infinite',
+        cardSlideFromRight: 'cardSlideFromRight 0.22s ease-out',
+        cardSlideFromLeft:  'cardSlideFromLeft 0.22s ease-out',
       },
       aspectRatio: { card: '2.5 / 3.5' },
     },

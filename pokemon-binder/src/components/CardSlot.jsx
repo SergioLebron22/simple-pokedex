@@ -1,7 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function CardSlot({ pokemon, card, slotNumber, onClick, onToggleOwned }) {
   const [imgError, setImgError] = useState(false);
+
+  // Reset error state when the underlying image source changes — a slot's card
+  // (e.g. in Master Sets) can change without this component remounting.
+  useEffect(() => { setImgError(false); }, [card?.tcgImage, pokemon?.id]);
 
   // Official artwork URL — works for base + most forms
   const spriteUrl = pokemon
@@ -13,7 +17,12 @@ export default function CardSlot({ pokemon, card, slotNumber, onClick, onToggleO
     ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`
     : null;
 
-  const displayImage = card?.tcgImage || (!imgError ? spriteUrl : fallbackUrl);
+  // A real TCG image has no further fallback (unlike the Pokémon sprite chain) —
+  // if it 404s (e.g. artwork not yet uploaded for a brand-new set), fall through
+  // to the "no image" placeholder instead of showing a broken image icon.
+  const displayImage = card?.tcgImage
+    ? (imgError ? null : card.tcgImage)
+    : (!imgError ? spriteUrl : fallbackUrl);
 
   const isTCG     = !!card?.tcgImage;
   const hasAnything = !!pokemon || !!card;

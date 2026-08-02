@@ -6,4 +6,5 @@ urlpatterns = [
     path('api/auth/',         include('users.urls')),
     path('api/national-dex/', include('national_dex.urls')),
     path('api/binders/',      include('binders.urls')),
+    path('api/mastersets/',   include('master_sets.urls')),
 ]
