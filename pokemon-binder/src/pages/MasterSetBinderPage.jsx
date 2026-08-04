@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 import Binder from '../components/Binder';
@@ -13,6 +13,90 @@ const FILTER_OPTIONS = [
   { id: 'owned',   label: 'Owned'   },
   { id: 'missing', label: 'Missing' },
 ];
+
+function CardSearch({ cardOverrides, onNavigate }) {
+  const [query,   setQuery]   = useState('');
+  const [results, setResults] = useState([]);
+  const [open,    setOpen]    = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!query.trim()) { setResults([]); setOpen(false); return; }
+    const q = query.trim().toLowerCase();
+    const matched = Object.entries(cardOverrides)
+      .filter(([, card]) => card?.name?.toLowerCase().includes(q))
+      .slice(0, 10)
+      .map(([globalIndex, card]) => ({ globalIndex: parseInt(globalIndex, 10), card }));
+    setResults(matched);
+    setOpen(matched.length > 0);
+  }, [query, cardOverrides]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const handleSelect = ({ globalIndex }) => {
+    onNavigate(globalIndex);
+    setQuery('');
+    setOpen(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') { setOpen(false); setQuery(''); }
+  };
+
+  return (
+    <div ref={containerRef} className="relative flex-1 min-w-[10rem] max-w-xs">
+      <input
+        type="text"
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        onFocus={() => results.length > 0 && setOpen(true)}
+        onKeyDown={handleKeyDown}
+        placeholder="🔍 Search cards…"
+        className="w-full bg-pokeDark-card border border-[#333355] focus:border-pokeRed-light
+                   text-white placeholder-gray-500 px-3 py-2 rounded-xl text-sm
+                   outline-none transition-colors"
+      />
+
+      {open && (
+        <div
+          className="absolute top-full left-0 mt-1 w-full sm:w-72 rounded-xl border border-[#333355]
+                     bg-[#1e1e2e] shadow-[0_8px_32px_rgba(0,0,0,0.7)] z-50
+                     overflow-hidden divide-y divide-white/5 max-h-80 overflow-y-auto"
+        >
+          {results.map(({ globalIndex, card }) => (
+            <button
+              key={globalIndex}
+              onClick={() => handleSelect({ globalIndex })}
+              className="w-full flex items-center gap-2.5 px-3 py-1.5
+                         hover:bg-white/10 transition-colors text-left"
+            >
+              {card.tcgImage ? (
+                <img
+                  src={card.tcgImage}
+                  alt={card.name}
+                  className="w-8 h-11 object-contain rounded"
+                />
+              ) : (
+                <span className="w-8 h-11 flex items-center justify-center text-sm opacity-30">🎴</span>
+              )}
+              <span className="text-white text-xs font-bold truncate">
+                {card.name}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function MasterSetBinderPage() {
   const { setId }   = useParams();
@@ -92,6 +176,10 @@ export default function MasterSetBinderPage() {
       if (spreadIdx !== clampedPage) goToPage(spreadIdx);
       return { globalIndex: nextIndex };
     });
+  };
+
+  const navigateToSlot = (globalIndex) => {
+    goToPage(Math.floor(globalIndex / SLOTS_PER_PAGE / 2));
   };
 
   const pct = totalSlots ? Math.round((ownedCount / totalSlots) * 100) : 0;
@@ -177,6 +265,8 @@ export default function MasterSetBinderPage() {
               {label}
             </button>
           ))}
+
+          <CardSearch cardOverrides={cardOverrides} onNavigate={navigateToSlot} />
         </div>
 
         {/* Two-page spread */}
