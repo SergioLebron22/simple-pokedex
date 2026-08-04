@@ -1,38 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../lib/api';
-
-// tcgdex's set/series data barely changes, so cache raw responses in
-// sessionStorage to avoid re-fetching ~20+ requests on every visit to this page.
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-
-function readCache(key) {
-  try {
-    const raw = sessionStorage.getItem(key);
-    if (!raw) return null;
-    const { timestamp, data } = JSON.parse(raw);
-    if (Date.now() - timestamp > CACHE_TTL_MS) return null;
-    return data;
-  } catch {
-    return null;
-  }
-}
-
-function writeCache(key, data) {
-  try {
-    sessionStorage.setItem(key, JSON.stringify({ timestamp: Date.now(), data }));
-  } catch {
-    // Storage full/unavailable (private browsing etc.) — safe to skip caching.
-  }
-}
-
-async function cachedFetchJson(key, url) {
-  const cached = readCache(key);
-  if (cached) return cached;
-  const data = await fetch(url).then(r => r.ok ? r.json() : Promise.reject());
-  writeCache(key, data);
-  return data;
-}
+import { cachedFetchJson } from '../lib/tcgdexCache';
 
 // tcgdex's brief /sets list has no release date, and fetching every set's full
 // detail (which include their entire card list) just for one field would be very
@@ -82,8 +51,8 @@ export function useMasterSets() {
     // no release-date sort and no Pocket filtering) rather than failing the page.
     const setsPromise    = cachedFetchJson('mastersets_cache_sets', 'https://api.tcgdex.net/v2/en/sets');
     const summaryPromise = authFetch(apiUrl('/api/mastersets/'))
-      .then(r => r.ok ? r.json() : {})
-      .catch(() => ({}));
+      .then(r => r.ok ? r.json() : { owned: {}, totals: {} })
+      .catch(() => ({ owned: {}, totals: {} }));
     const seriesPromise  = fetchSeriesInfo().catch(() => ({ bySetId: {}, pocketSetIds: new Set() }));
 
     Promise.all([setsPromise, summaryPromise, seriesPromise])
@@ -91,16 +60,24 @@ export function useMasterSets() {
         if (cancelled) return;
         const merged = (Array.isArray(tcgSets) ? tcgSets : [])
           .filter(s => !pocketSetIds.has(s.id))
-          .map(s => ({
-            id:          s.id,
-            name:        s.name,
-            logo:        s.logo || '',
-            symbol:      s.symbol || '',
-            totalCards:  s.cardCount?.official ?? s.cardCount?.total ?? 0,
-            ownedCount:  summary[s.id] || 0,
-            releaseDate: bySetId[s.id]?.releaseDate ?? null,
-            seriesOrder: bySetId[s.id]?.order ?? 0,
-          }));
+          .map(s => {
+            // `totals` is a global cache of each set's true slot count including
+            // holo/reverse-holo variant slots, populated the first time anyone
+            // opens that set's binder — see MasterSetTotalSlots on the backend.
+            // Until then, fall back to tcgdex's plain card count as an estimate.
+            const knownTotal = summary.totals?.[s.id];
+            return {
+              id:               s.id,
+              name:             s.name,
+              logo:             s.logo || '',
+              symbol:           s.symbol || '',
+              totalCards:       knownTotal ?? (s.cardCount?.official ?? s.cardCount?.total ?? 0),
+              totalCardsExact:  knownTotal != null,
+              ownedCount:       summary.owned?.[s.id] || 0,
+              releaseDate:      bySetId[s.id]?.releaseDate ?? null,
+              seriesOrder:      bySetId[s.id]?.order ?? 0,
+            };
+          });
         setSets(merged);
       })
       .catch(() => { if (!cancelled) setError('Failed to load sets.'); })

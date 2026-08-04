@@ -55,6 +55,18 @@ export default function CardSlot({ pokemon, card, slotNumber, onClick, onToggleO
                         border-2 border-white shadow z-10" />
       )}
 
+      {/* Print-variant badge (Master Sets holo/reverse holo slots) */}
+      {card?.variantLabel && (
+        <span
+          className={`absolute bottom-[22px] left-[4px] text-[6px] font-extrabold px-1 py-[1px]
+                      rounded z-20 text-white shadow ${
+                        card.variantLabel === 'Holo' ? 'bg-purple-600' : 'bg-teal-600'
+                      }`}
+        >
+          {card.variantLabel === 'Reverse Holo' ? 'REV' : card.variantLabel.toUpperCase()}
+        </span>
+      )}
+
       {hasAnything ? (
         <div className="w-full h-full flex items-center justify-center relative">
           {displayImage ? (

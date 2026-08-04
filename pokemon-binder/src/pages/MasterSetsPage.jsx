@@ -81,8 +81,11 @@ function SetBinderCard({ set, onClick }) {
       <div className="p-4">
         <h3 className="text-white font-extrabold text-sm mb-2 truncate">{set.name}</h3>
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-pokeGray-light text-[11px]">
-            {set.ownedCount} / {set.totalCards} owned
+          <span
+            className="text-pokeGray-light text-[11px]"
+            title={set.totalCardsExact ? undefined : 'Includes holo/reverse-holo variants once you open this set'}
+          >
+            {set.ownedCount} / {set.totalCardsExact ? '' : '~'}{set.totalCards} owned
           </span>
           <span className="text-pokeGold text-[11px] font-bold">{pct}%</span>
         </div>

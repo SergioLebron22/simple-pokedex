@@ -1,24 +1,44 @@
+from collections import defaultdict
+
 from django.db.models import Count
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import MasterSetCard
-from .serializers import MasterSetCardSerializer
+from .models import MasterSetCard, MasterSetCardVariant, MasterSetTotalSlots
+from .serializers import (
+    MasterSetCardSerializer,
+    MasterSetCardVariantSerializer,
+    MasterSetTotalSlotsSerializer,
+)
 
 
 class MasterSetSummaryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        rows = (
+        owned = defaultdict(int)
+        for row in (
             MasterSetCard.objects
             .filter(user=request.user, owned=True)
             .values('set_id')
             .annotate(owned_count=Count('id'))
-        )
-        return Response({row['set_id']: row['owned_count'] for row in rows})
+        ):
+            owned[row['set_id']] += row['owned_count']
+        for row in (
+            MasterSetCardVariant.objects
+            .filter(user=request.user, owned=True)
+            .values('set_id')
+            .annotate(owned_count=Count('id'))
+        ):
+            owned[row['set_id']] += row['owned_count']
+
+        # Global (not per-user) cache of each set's true slot count, including
+        # holo/reverse-holo variant slots — see MasterSetTotalSlots.
+        totals = dict(MasterSetTotalSlots.objects.values_list('set_id', 'total_slots'))
+
+        return Response({'owned': dict(owned), 'totals': totals})
 
 
 class MasterSetDetailView(APIView):
@@ -44,6 +64,58 @@ class MasterSetCardToggleView(APIView):
             defaults={'owned': False},
         )
         serializer = MasterSetCardSerializer(card, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+
+class MasterSetVariantsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, set_id):
+        rows = (
+            MasterSetCardVariant.objects
+            .filter(user=request.user, set_id=set_id, owned=True)
+            .values_list('tcg_card_id', 'variant')
+        )
+        owned_by_card = defaultdict(list)
+        for card_id, variant in rows:
+            owned_by_card[card_id].append(variant)
+        return Response(owned_by_card)
+
+
+class MasterSetCardVariantToggleView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, set_id, card_id, variant):
+        row, created = MasterSetCardVariant.objects.get_or_create(
+            user=request.user,
+            set_id=set_id,
+            tcg_card_id=card_id,
+            variant=variant,
+            defaults={'owned': False},
+        )
+        serializer = MasterSetCardVariantSerializer(row, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+
+class MasterSetTotalSlotsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, set_id):
+        row, created = MasterSetTotalSlots.objects.get_or_create(
+            set_id=set_id,
+            defaults={'total_slots': request.data.get('total_slots') or 0},
+        )
+        serializer = MasterSetTotalSlotsSerializer(row, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(

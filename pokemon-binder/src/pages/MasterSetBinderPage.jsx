@@ -27,6 +27,7 @@ export default function MasterSetBinderPage() {
     toggleOwned,
     goToPage,
     loading,
+    loadingProgress,
     error,
     saveError,
   } = useMasterSetBinder(setId);
@@ -37,8 +38,13 @@ export default function MasterSetBinderPage() {
   if (loading) return (
     <>
       <NavBar />
-      <div className="flex items-center justify-center min-h-[calc(100vh-3rem)]">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-3rem)] gap-2">
         <p className="text-pokeGold font-pixel animate-pulse" style={{ fontSize: '10px' }}>Loading…</p>
+        {loadingProgress.total > 0 && (
+          <p className="text-pokeGray-light text-xs">
+            Checking print variants ({loadingProgress.done} / {loadingProgress.total})
+          </p>
+        )}
       </div>
     </>
   );
