@@ -19,6 +19,44 @@ const VARIANT_LABELS = {
   unlimitedHolofoil: 'Unlimited Holo',
 };
 
+// tcgdex and pokemontcg.io mostly share the same "{set}-{number}" card id
+// scheme, but tcgdex zero-pads newer sets/numbers (e.g. "sv01-001") while
+// pokemontcg.io never does ("sv1-1") — strip the padding for a second attempt.
+function stripIdPadding(tcgCardId) {
+  const m = /^([a-z]+)0*(\d+)-0*(\d+)$/i.exec(tcgCardId || '');
+  if (!m) return null;
+  const [, prefix, setNum, localNum] = m;
+  return `${prefix}${setNum}-${localNum}`;
+}
+
+async function fetchPokemonTcgCard(id) {
+  try {
+    const r = await fetch(`https://api.pokemontcg.io/v2/cards/${id}`);
+    if (!r.ok) return null;
+    const data = await r.json();
+    return data?.data || null;
+  } catch {
+    return null;
+  }
+}
+
+// Special/sub-set ids (e.g. tcgdex "swsh12.5gg" vs pokemontcg.io "swsh12pt5gg")
+// diverge with no reliable pattern between the two APIs — as a last resort,
+// search by name + local card number instead of guessing an id.
+async function searchPokemonTcgCard(name, localId) {
+  if (!name || !localId) return null;
+  const number = localId.replace(/^0+(?=\d)/, '');
+  try {
+    const q = encodeURIComponent(`name:"${name}" number:${number}`);
+    const r = await fetch(`https://api.pokemontcg.io/v2/cards?q=${q}`);
+    if (!r.ok) return null;
+    const data = await r.json();
+    return data?.data?.[0] || null;
+  } catch {
+    return null;
+  }
+}
+
 function CardInfoPanel({ card }) {
   const [priceData, setPriceData] = useState(null);
   const [cardMeta, setCardMeta]   = useState(null);
@@ -29,21 +67,43 @@ function CardInfoPanel({ card }) {
     setCardMeta(null);
     if (!card?.tcgCardId) return;
     setPriceLoading(true);
-    fetch(`https://api.pokemontcg.io/v2/cards/${card.tcgCardId}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (!data?.data) return;
-        const c = data.data;
-        setCardMeta({ rarity: c.rarity, hp: c.hp, types: c.types, number: c.number, set: c.set?.name });
-        if (c.tcgplayer?.prices) setPriceData(c.tcgplayer.prices);
-      })
-      .catch(() => {})
-      .finally(() => setPriceLoading(false));
-  }, [card?.tcgCardId]);
+    let cancelled = false;
+
+    (async () => {
+      let match = await fetchPokemonTcgCard(card.tcgCardId);
+
+      if (!match) {
+        const strippedId = stripIdPadding(card.tcgCardId);
+        if (strippedId && strippedId !== card.tcgCardId) {
+          match = await fetchPokemonTcgCard(strippedId);
+        }
+      }
+
+      if (!match) {
+        match = await searchPokemonTcgCard(card.name, card.tcgLocalId);
+      }
+
+      if (cancelled || !match) return;
+      setCardMeta({
+        rarity: match.rarity,
+        hp: match.hp,
+        types: match.types,
+        number: match.number,
+        set: match.set?.name,
+        tcgplayerUrl: match.tcgplayer?.url || null,
+      });
+      if (match.tcgplayer?.prices) setPriceData(match.tcgplayer.prices);
+    })().finally(() => { if (!cancelled) setPriceLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [card?.tcgCardId, card?.name, card?.tcgLocalId]);
 
   const priceEntries = priceData
     ? Object.entries(priceData).filter(([, p]) => p?.market != null)
     : [];
+
+  const tcgplayerLink = cardMeta?.tcgplayerUrl
+    || `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(card?.name || '')}&view=grid`;
 
   return (
     <div className="flex flex-col gap-3 min-w-0">
@@ -93,8 +153,8 @@ function CardInfoPanel({ card }) {
         {priceLoading && (
           <p className="text-xs text-pokeGray-light animate-pulse">Loading prices…</p>
         )}
-        {!priceLoading && priceEntries.length > 0 ? (
-          <div className="space-y-2">
+        {!priceLoading && priceEntries.length > 0 && (
+          <div className="space-y-2 mb-2">
             {priceEntries.map(([variant, p]) => (
               <div key={variant}
                 className="bg-pokeDark-card rounded-xl p-2.5 border border-white/5">
@@ -108,15 +168,16 @@ function CardInfoPanel({ card }) {
               </div>
             ))}
           </div>
-        ) : !priceLoading && (
+        )}
+        {!priceLoading && (
           <a
-            href={`https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(card?.name || '')}&view=grid`}
+            href={tcgplayerLink}
             target="_blank"
             rel="noreferrer"
             className="block bg-pokeDark-card rounded-xl p-2.5 border border-white/5
                        text-pokeGold text-[11px] text-center hover:border-pokeGold/30 transition-colors"
           >
-            Check price on TCGPlayer →
+            {cardMeta?.tcgplayerUrl ? 'View on TCGPlayer →' : 'Search on TCGPlayer →'}
           </a>
         )}
       </div>
